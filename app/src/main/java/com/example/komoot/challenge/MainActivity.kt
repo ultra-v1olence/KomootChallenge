@@ -1,9 +1,9 @@
 package com.example.komoot.challenge
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
@@ -37,13 +37,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val activityResultLauncher: ActivityResultLauncher<String> = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
-            if (it) {
-                onLocationPermissionGranted()
-            } else {
-                onLocationPermissionDenied()
+        val activityResultLauncher: ActivityResultLauncher<String> =
+            registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+                if (it) {
+                    onLocationPermissionGranted()
+                } else {
+                    onLocationPermissionDenied()
+                }
             }
-        }
         setContent {
             AppTheme {
                 val navController = rememberNavController()
@@ -51,7 +52,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-    
+
     @Composable
     private fun StartNewWalk(
         onNewWalkStarted: () -> Unit,
@@ -87,9 +88,6 @@ class MainActivity : ComponentActivity() {
     ) {
         val locationPermission = mainViewModel.locationPermissionStateFlow.collectAsState()
         val locationPermissionGranted = locationPermission.value
-        if (!locationPermissionGranted) {
-            checkForFineLocationPermission(activityResultLauncher)
-        }
         Scaffold(
             floatingActionButton = {
                 FloatingActionButton(
@@ -134,7 +132,15 @@ class MainActivity : ComponentActivity() {
             composable(route = Screen.WALK.name) {
                 Walk(
                     activityResultLauncher = activityResultLauncher,
-                    onWalkEnded = { navHostController.navigate(Screen.START_WALK.name) }
+                    onWalkEnded = {
+                        stopService(
+                            Intent(
+                                this@MainActivity,
+                                LocationService::class.java
+                            )
+                        )
+                        navHostController.navigate(Screen.START_WALK.name)
+                    }
                 )
             }
         }
@@ -142,7 +148,9 @@ class MainActivity : ComponentActivity() {
 
     private fun checkForFineLocationPermission(activityResultLauncher: ActivityResultLauncher<String>) {
         when (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
-            PackageManager.PERMISSION_GRANTED -> onLocationPermissionGranted()
+            PackageManager.PERMISSION_GRANTED -> {
+                onLocationPermissionGranted()
+            }
             else -> activityResultLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
@@ -153,6 +161,12 @@ class MainActivity : ComponentActivity() {
 
     private fun onLocationPermissionGranted() {
         mainViewModel.onLocationPermissionGranted()
+        startService(
+            Intent(
+                this,
+                LocationService::class.java,
+            )
+        )
     }
 
     private enum class Screen {

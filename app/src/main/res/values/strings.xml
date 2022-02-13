@@ -5,4 +5,6 @@
     <string name="stop_walk">Press the button to stop the walk.</string>
     <string name="start_new_walk_accessibility">Start a new walk</string>
     <string name="stop_walk_accessibility">Stop the walk</string>
+    <string name="location_service_notification_title">Downloading photos of the locations you\'ve been…</string>
+    <string name="location_service_notification_subtitle">Tap to see what we have got!</string>
 </resources>
