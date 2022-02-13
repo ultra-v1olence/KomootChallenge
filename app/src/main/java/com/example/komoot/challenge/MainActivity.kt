@@ -1,9 +1,14 @@
 package com.example.komoot.challenge
 
 import android.Manifest
+import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.IBinder
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
@@ -25,15 +30,38 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.komoot.challenge.ui.theme.AppTheme
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
     private val mainViewModel: MainViewModel by viewModels()
+
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(className: ComponentName, service: IBinder) {
+            val binder = service as LocationService.LocationBinder
+            lifecycleScope.launch {
+                binder.locations.collect {
+                    Log.d(
+                        "12345",
+                        "location: ${it.latitude};${it.longitude}"
+                    )
+                }
+            }
+
+        }
+
+        override fun onServiceDisconnected(arg0: ComponentName) {
+
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -133,12 +161,7 @@ class MainActivity : ComponentActivity() {
                 Walk(
                     activityResultLauncher = activityResultLauncher,
                     onWalkEnded = {
-                        stopService(
-                            Intent(
-                                this@MainActivity,
-                                LocationService::class.java
-                            )
-                        )
+                        unbindService(connection)
                         navHostController.navigate(Screen.START_WALK.name)
                     }
                 )
@@ -161,12 +184,9 @@ class MainActivity : ComponentActivity() {
 
     private fun onLocationPermissionGranted() {
         mainViewModel.onLocationPermissionGranted()
-        startService(
-            Intent(
-                this,
-                LocationService::class.java,
-            )
-        )
+        Intent(this, LocationService::class.java).also { intent ->
+            bindService(intent, connection, Context.BIND_AUTO_CREATE)
+        }
     }
 
     private enum class Screen {

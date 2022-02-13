@@ -3,6 +3,8 @@ package com.example.komoot.challenge
 import android.app.*
 import android.content.Context
 import android.content.Intent
+import android.location.Location
+import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import android.os.Looper
@@ -11,6 +13,8 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import com.google.android.gms.location.*
 import com.google.android.gms.tasks.Task
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 
 class LocationService : Service() {
 
@@ -24,12 +28,18 @@ class LocationService : Service() {
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
         }
 
-    override fun onBind(p0: Intent?): IBinder? {
-        return null
+    private val locationFlow = MutableSharedFlow<Location>()
+
+    override fun onBind(p0: Intent?) = LocationBinder()
+
+    override fun onUnbind(intent: Intent?): Boolean {
+        stopSelf()
+        return super.onUnbind(intent)
     }
 
     override fun onCreate() {
         super.onCreate()
+        Log.d("12345", "LocationService created")
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         val task: Task<LocationSettingsResponse> =
             LocationServices
@@ -49,17 +59,7 @@ class LocationService : Service() {
         //todo: do I even need this task?
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
-                Log.d(
-                    "12345",
-                    "locations: ${locationResult.locations.joinToString { "${it.latitude};${it.longitude}" }}"
-                )
-            }
-
-            override fun onLocationAvailability(locationAvailability: LocationAvailability) {
-                Log.d(
-                    "12345",
-                    "isLocationAvailable: ${locationAvailability.isLocationAvailable}"
-                )
+                locationFlow.tryEmit(locationResult.lastLocation)
             }
         }
         try {
@@ -74,10 +74,12 @@ class LocationService : Service() {
     }
 
     override fun onDestroy() {
+        Log.d("12345", "LocationService destroyed")
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.d("12345", "LocationService onStartCommand")
         val pendingIntent: PendingIntent =
             Intent(this, MainActivity::class.java).let { notificationIntent ->
                 PendingIntent.getActivity(this, 0, notificationIntent, 0)
@@ -91,8 +93,8 @@ class LocationService : Service() {
 
         val notification: Notification = NotificationCompat.Builder(this, channelId)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setContentTitle(getText(R.string.location_service_notification_title))
-            .setContentText(getText(R.string.location_service_notification_subtitle))
+            .setContentTitle(getString(R.string.location_service_notification_title))
+            .setContentText(getString(R.string.location_service_notification_subtitle))
             .setContentIntent(pendingIntent)
             .build()
 
@@ -103,9 +105,20 @@ class LocationService : Service() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun createNotificationChannel(channelId: String, channelName: String): String {
-        val notificationChannel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_DEFAULT)
+        val notificationChannel = NotificationChannel(
+            channelId,
+            channelName,
+            NotificationManager.IMPORTANCE_DEFAULT,
+        )
         val service = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         service.createNotificationChannel(notificationChannel)
         return channelId
+    }
+
+    inner class LocationBinder : Binder() {
+
+        val locations: Flow<Location>
+            get() = locationFlow
+
     }
 }
