@@ -30,13 +30,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.komoot.challenge.ui.theme.AppTheme
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
@@ -44,8 +44,13 @@ class MainActivity : ComponentActivity() {
 
     private val mainViewModel: MainViewModel by viewModels()
 
-    private val connection = object : ServiceConnection {
+    private var currentConnection: LocationServiceConnection? = null
+
+    private class LocationServiceConnection(
+        private val lifecycleScope: LifecycleCoroutineScope
+    ) : ServiceConnection {
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
+            Log.d("12345", "onServiceConnected")
             val binder = service as LocationService.LocationBinder
             lifecycleScope.launch {
                 binder.locations.collect {
@@ -59,7 +64,7 @@ class MainActivity : ComponentActivity() {
         }
 
         override fun onServiceDisconnected(arg0: ComponentName) {
-
+            Log.d("12345", "onServiceDisconnected")
         }
     }
 
@@ -161,7 +166,7 @@ class MainActivity : ComponentActivity() {
                 Walk(
                     activityResultLauncher = activityResultLauncher,
                     onWalkEnded = {
-                        unbindService(connection)
+                        currentConnection?.let { connection -> unbindService(connection) }
                         navHostController.navigate(Screen.START_WALK.name)
                     }
                 )
@@ -183,9 +188,15 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun onLocationPermissionGranted() {
+        Log.d("12345", "onLocationPermissionGranted")
         mainViewModel.onLocationPermissionGranted()
         Intent(this, LocationService::class.java).also { intent ->
-            bindService(intent, connection, Context.BIND_AUTO_CREATE)
+            startService(intent)
+            bindService(
+                intent,
+                LocationServiceConnection(lifecycleScope).also { currentConnection = it },
+                Context.BIND_AUTO_CREATE
+            )
         }
     }
 

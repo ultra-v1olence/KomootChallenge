@@ -39,7 +39,7 @@ class LocationService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        Log.d("12345", "LocationService created")
+        Log.d("12345", "LocationService created: $this")
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         val task: Task<LocationSettingsResponse> =
             LocationServices
@@ -53,7 +53,7 @@ class LocationService : Service() {
         task.addOnSuccessListener { locationSettingsResponse ->
             Log.d(
                 "12345",
-                "isLocationUsable = ${locationSettingsResponse.locationSettingsStates?.isLocationUsable}"
+                "isLocationUsable = ${locationSettingsResponse.locationSettingsStates?.isLocationUsable}: $this"
             )
         }
         //todo: do I even need this task?
@@ -69,17 +69,17 @@ class LocationService : Service() {
                 Looper.getMainLooper()
             )
         } catch (t: SecurityException) {
-            Log.e("12345", "no permission?", t)
+            Log.e("12345", "no permission?: $this", t)
         }
     }
 
     override fun onDestroy() {
-        Log.d("12345", "LocationService destroyed")
+        Log.d("12345", "LocationService destroyed: $this")
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d("12345", "LocationService onStartCommand")
+        Log.d("12345", "LocationService onStartCommand: $this")
         val pendingIntent: PendingIntent =
             Intent(this, MainActivity::class.java).let { notificationIntent ->
                 PendingIntent.getActivity(this, 0, notificationIntent, 0)
@@ -100,7 +100,7 @@ class LocationService : Service() {
 
         startForeground(1, notification)
 
-        return super.onStartCommand(intent, flags, startId)
+        return START_STICKY
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
