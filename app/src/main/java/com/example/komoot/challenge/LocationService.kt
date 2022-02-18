@@ -33,7 +33,9 @@ class LocationService : Service() {
     override fun onBind(p0: Intent?) = LocationBinder()
 
     override fun onUnbind(intent: Intent?): Boolean {
+        Log.d("12345", "LocationService onUnbind: $this")
         stopSelf()
+        // todo: it's not necessary to call stopSelf here; I can destroy the service from onStartCommand if I send a specific parameter. this service can proceed while unbound
         return super.onUnbind(intent)
     }
 
