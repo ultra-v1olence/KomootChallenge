@@ -84,7 +84,7 @@ class LocationService : Service() {
         Log.d("12345", "LocationService onStartCommand: $this")
         val pendingIntent: PendingIntent =
             Intent(this, MainActivity::class.java).let { notificationIntent ->
-                PendingIntent.getActivity(this, 0, notificationIntent, 0)
+                PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE) // todo: what does this flag mean?
             }
 
         val channelId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

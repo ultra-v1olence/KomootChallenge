@@ -62,7 +62,6 @@ class MainActivity : ComponentActivity() {
                     )
                 }
             }
-
         }
 
         override fun onServiceDisconnected(arg0: ComponentName) {
@@ -203,7 +202,9 @@ class MainActivity : ComponentActivity() {
                 LocationServiceConnection(lifecycleScope).also { currentConnection = it },
                 Context.BIND_AUTO_CREATE
             )
-            // todo: are both calls necessary?
+            // todo: насколько я понимаю, комбинация start+bind всегда прицепится к существующему.
+            // и ее можно вызывать, даже если сервис уже существует: start ничего не сделает (хорошо бы проверить, вызвав start дважды подряд)
+            // todo: вообще, если я вызываю bind, то start уже не нужен даже, правильно?
         }
     }
 
