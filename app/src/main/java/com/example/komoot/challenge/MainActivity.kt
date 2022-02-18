@@ -45,6 +45,8 @@ class MainActivity : ComponentActivity() {
     private val mainViewModel: MainViewModel by viewModels()
 
     private var currentConnection: LocationServiceConnection? = null
+    // todo: то есть при перевороте девайса соединение ломается? (да; и сервис умирает) поможет ли rememberSaveable?
+    // todo: а как подсосаться к существующему сервису при старте активности?
 
     private class LocationServiceConnection(
         private val lifecycleScope: LifecycleCoroutineScope
@@ -78,10 +80,11 @@ class MainActivity : ComponentActivity() {
                     onLocationPermissionDenied()
                 }
             }
+        checkForFineLocationPermission(activityResultLauncher)
         setContent {
             AppTheme {
                 val navController = rememberNavController()
-                AppNavGraph(navController, activityResultLauncher)
+                AppNavGraph(navController)
             }
         }
     }
@@ -90,37 +93,46 @@ class MainActivity : ComponentActivity() {
     private fun StartNewWalk(
         onNewWalkStarted: () -> Unit,
     ) {
+        val locationPermission = mainViewModel.locationPermissionStateFlow.collectAsState()
+        val locationPermissionGranted = locationPermission.value
         Scaffold(
             floatingActionButton = {
-                FloatingActionButton(
-                    onClick = {
-                        onNewWalkStarted()
-                    },
-                    content = {
-                        Icon(
-                            imageVector = Icons.Default.Hiking,
-                            contentDescription = getString(R.string.start_new_walk_accessibility),
-                        )
-                    }
-                )
+                if (locationPermissionGranted) {
+                    FloatingActionButton(
+                        onClick = {
+                            onNewWalkStarted()
+                        },
+                        content = {
+                            Icon(
+                                imageVector = Icons.Default.Hiking,
+                                contentDescription = getString(R.string.start_new_walk_accessibility),
+                            )
+                        }
+                    )
+                }
             }
         ) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(
-                    text = getString(R.string.start_new_walk),
-                    modifier = Modifier.padding(horizontal = 48.dp)
-                )
+                if (locationPermissionGranted) {
+                    Text(
+                        text = getString(R.string.start_new_walk),
+                        modifier = Modifier.padding(horizontal = 48.dp)
+                    )
+                } else {
+                    Text(
+                        text = getString(R.string.please_allow_location),
+                        modifier = Modifier.padding(horizontal = 48.dp)
+                    )
+                    // todo: add link to the settings
+                }
             }
         }
     }
 
     @Composable
     private fun Walk(
-        activityResultLauncher: ActivityResultLauncher<String>,
         onWalkEnded: () -> Unit,
     ) {
-        val locationPermission = mainViewModel.locationPermissionStateFlow.collectAsState()
-        val locationPermissionGranted = locationPermission.value
         Scaffold(
             floatingActionButton = {
                 FloatingActionButton(
@@ -137,18 +149,10 @@ class MainActivity : ComponentActivity() {
             }
         ) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                if (locationPermissionGranted) {
-                    Text(
-                        text = getString(R.string.stop_walk),
-                        modifier = Modifier.padding(horizontal = 48.dp)
-                    )
-                } else {
-                    checkForFineLocationPermission(activityResultLauncher)
-                    Text(
-                        text = getString(R.string.please_allow_location),
-                        modifier = Modifier.padding(horizontal = 48.dp)
-                    )
-                }
+                Text(
+                    text = getString(R.string.stop_walk),
+                    modifier = Modifier.padding(horizontal = 48.dp)
+                )
             }
         }
     }
@@ -156,20 +160,19 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun AppNavGraph(
         navHostController: NavHostController,
-        activityResultLauncher: ActivityResultLauncher<String>,
     ) {
         NavHost(navController = navHostController, startDestination = Screen.START_WALK.name) {
             composable(route = Screen.START_WALK.name) {
-                StartNewWalk { navHostController.navigate(Screen.WALK.name) }
+                StartNewWalk {
+                    navHostController.navigate(Screen.WALK.name)
+                    startLocationService()
+                }
             }
             composable(route = Screen.WALK.name) {
-                Walk(
-                    activityResultLauncher = activityResultLauncher,
-                    onWalkEnded = {
-                        currentConnection?.let { connection -> unbindService(connection) }
-                        navHostController.navigate(Screen.START_WALK.name)
-                    }
-                )
+                Walk {
+                    stopLocationService()
+                    navHostController.navigate(Screen.START_WALK.name)
+                }
             }
         }
     }
@@ -190,6 +193,9 @@ class MainActivity : ComponentActivity() {
     private fun onLocationPermissionGranted() {
         Log.d("12345", "onLocationPermissionGranted")
         mainViewModel.onLocationPermissionGranted()
+    }
+
+    private fun startLocationService() {
         Intent(this, LocationService::class.java).also { intent ->
             startService(intent)
             bindService(
@@ -197,11 +203,17 @@ class MainActivity : ComponentActivity() {
                 LocationServiceConnection(lifecycleScope).also { currentConnection = it },
                 Context.BIND_AUTO_CREATE
             )
+            // todo: are both calls necessary?
         }
+    }
+
+    private fun stopLocationService() {
+        currentConnection?.let { connection -> unbindService(connection) }
     }
 
     private enum class Screen {
         START_WALK,
         WALK,
     }
+    // todo: this navigation is useless
 }
