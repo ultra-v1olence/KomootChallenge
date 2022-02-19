@@ -7,14 +7,17 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.FloatingActionButton
@@ -116,10 +119,11 @@ class MainActivity : ComponentActivity() {
                     )
                 } else {
                     Text(
-                        text = getString(R.string.please_allow_location),
-                        modifier = Modifier.padding(horizontal = 48.dp)
+                        text = getString(R.string.click_to_allow_location_permission),
+                        modifier = Modifier
+                            .padding(horizontal = 48.dp)
+                            .clickable { openPermissionsSettings() },
                     )
-                    // todo: add link to the settings
                 }
             }
         }
@@ -250,6 +254,13 @@ class MainActivity : ComponentActivity() {
             }
         }
         return false
+    }
+
+    private fun openPermissionsSettings() {
+        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).also {
+            it.data = Uri.fromParts("package", packageName, null)
+            startActivity(it)
+        }
     }
 
     private enum class Screen {
