@@ -15,7 +15,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.Scaffold
@@ -36,6 +38,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import coil.compose.rememberImagePainter
 import com.example.komoot.challenge.ui.theme.AppTheme
 
 class MainActivity : ComponentActivity() {
@@ -47,7 +50,7 @@ class MainActivity : ComponentActivity() {
     private class LocationServiceConnection(
         private val lifecycleOwner: LifecycleOwner
     ) : ServiceConnection {
-        var numbers: LiveData<Int>? = null
+        var photos: LiveData<List<String>>? = null
 
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
             Log.d("12345", "onServiceConnected")
@@ -58,7 +61,7 @@ class MainActivity : ComponentActivity() {
                     "location: ${it.latitude};${it.longitude}"
                 )
             }
-            numbers = binder.numbers
+            photos = binder.photoUrls
         }
 
         override fun onServiceDisconnected(arg0: ComponentName) {
@@ -138,7 +141,7 @@ class MainActivity : ComponentActivity() {
     private fun Walk(
         onWalkEnded: () -> Unit,
     ) {
-        val number = currentConnection?.numbers?.observeAsState()
+        val photos = currentConnection?.photos?.observeAsState()
         Scaffold(
             floatingActionButton = {
                 FloatingActionButton(
@@ -154,15 +157,25 @@ class MainActivity : ComponentActivity() {
                 )
             }
         ) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = getString(R.string.stop_walk),
-                        modifier = Modifier.padding(horizontal = 48.dp)
-                    )
-                    if (number?.value != null) {
+            val photosList = photos?.value ?: emptyList()
+            if (photosList.isNotEmpty()) {
+                LazyColumn {
+                    photosList.forEach {
+                        item {
+                            Image(
+                                painter = rememberImagePainter(it),
+                                contentDescription = null,
+                                modifier = Modifier.size(200.dp) // todo: resize to fit
+                            )
+                        }
+                    }
+                }
+            } else {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = number.value.toString(),
+                            text = getString(R.string.no_photos_placeholder),
+                            modifier = Modifier.padding(horizontal = 48.dp)
                         )
                     }
                 }

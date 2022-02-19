@@ -30,11 +30,9 @@ class LocationService : Service() {
         }
 
     private val locationLiveData = MutableLiveData<Location>()
-    private val numbersLiveData = MutableLiveData<Int>()
+    private val photoUrlsLiveData = MutableLiveData<List<String>>()
 
     private val photosRepository = PhotosRepository()
-
-    private var timer: Timer? = null
 
     override fun onBind(p0: Intent?) = LocationBinder()
 
@@ -54,11 +52,13 @@ class LocationService : Service() {
                 locationLiveData.value = lastLocation
                 GlobalScope.launch { // fixme: of course it should be something else
                     try {
-                        photosRepository.retrievePhoto(
-                            lastLocation.latitude.toString(),
-                            lastLocation.longitude.toString(),
-                        ).also {
-                            Log.d("12345", "Photo retrieved: $it")
+                        val photo = photosRepository.retrievePhoto(lastLocation)
+                        photo?.let {
+                            val photoUrl = "https://live.staticflickr.com/${it.server}/${it.id}_${it.secret}.jpg"
+                            Log.d("12345", "Photo retrieved: $photoUrl")
+                            photoUrlsLiveData.postValue(
+                                listOf(photoUrl).plus(photoUrlsLiveData.value ?: emptyList())
+                            )
                         }
                     } catch (t: Throwable) {
                         Log.e("12345", "Photo retrieval error", t)
@@ -75,26 +75,10 @@ class LocationService : Service() {
         } catch (t: SecurityException) {
             Log.e("12345", "no permission?: $this", t)
         }
-        Timer("increment every second").also { timer = it }.schedule(
-            IncrementTimerTask(
-                numbersLiveData
-            ),
-            0L,
-            1000L,
-        )
-    }
-
-    private class IncrementTimerTask(private val liveData: MutableLiveData<Int>) : TimerTask() {
-        var number = 0
-
-        override fun run() {
-            liveData.postValue(number++)
-        }
     }
 
     override fun onDestroy() {
         Log.d("12345", "LocationService destroyed: $this")
-        timer?.cancel()
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 
@@ -155,7 +139,7 @@ class LocationService : Service() {
         val locations: LiveData<Location>
             get() = locationLiveData
 
-        val numbers: LiveData<Int>
-            get() = numbersLiveData
+        val photoUrls: LiveData<List<String>>
+            get() = photoUrlsLiveData
     }
 }
