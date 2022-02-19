@@ -43,7 +43,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        requestLocationPermission()
         val locationServiceRunning = isLocationServiceRunning()
         if (locationServiceRunning) {
             connectToExistingService()
@@ -68,6 +67,11 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        requestLocationPermission()
     }
 
     override fun onDestroy() {
