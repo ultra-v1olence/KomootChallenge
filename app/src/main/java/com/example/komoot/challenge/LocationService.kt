@@ -13,10 +13,7 @@ import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.location.*
-import com.google.android.gms.tasks.Task
-import kotlinx.coroutines.*
 import java.util.*
-import kotlin.coroutines.CoroutineContext
 
 class LocationService : Service() {
 
@@ -33,7 +30,7 @@ class LocationService : Service() {
     private val locationLiveData = MutableLiveData<Location>()
     private val numbersLiveData = MutableLiveData<Int>()
 
-    var timer: Timer? = null
+    private var timer: Timer? = null
 
     override fun onBind(p0: Intent?) = LocationBinder()
 
@@ -92,7 +89,16 @@ class LocationService : Service() {
         }
         val pendingIntent: PendingIntent =
             Intent(this, MainActivity::class.java).let { notificationIntent ->
-                PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE) // todo: what does this flag mean?
+                PendingIntent.getActivity(
+                    this,
+                    0,
+                    notificationIntent,
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        PendingIntent.FLAG_IMMUTABLE
+                    } else {
+                        0
+                    },
+                )
             }
 
         val channelId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

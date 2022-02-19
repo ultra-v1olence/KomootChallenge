@@ -196,9 +196,7 @@ class MainActivity : ComponentActivity() {
 
     private fun checkForFineLocationPermission(activityResultLauncher: ActivityResultLauncher<String>) {
         when (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
-            PackageManager.PERMISSION_GRANTED -> {
-                onLocationPermissionGranted()
-            }
+            PackageManager.PERMISSION_GRANTED -> onLocationPermissionGranted()
             else -> activityResultLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
@@ -235,6 +233,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @Suppress("DEPRECATION")
     private fun isLocationServiceRunning(): Boolean {
         val manager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
         manager.getRunningServices(Int.MAX_VALUE).forEach {
