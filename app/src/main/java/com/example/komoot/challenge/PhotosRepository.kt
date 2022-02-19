@@ -1,6 +1,7 @@
 package com.example.komoot.challenge
 
 import android.location.Location
+import com.example.komoot.challenge.repository.FlickrApiKeys
 import com.flickr4java.flickr.Flickr
 import com.flickr4java.flickr.REST
 import com.flickr4java.flickr.photos.Photo
