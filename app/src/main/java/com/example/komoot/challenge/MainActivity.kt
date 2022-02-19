@@ -9,7 +9,6 @@ import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.IBinder
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
@@ -216,7 +215,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun onLocationPermissionGranted() {
-        Log.d("12345", "onLocationPermissionGranted")
         mainViewModel.onLocationPermissionGranted()
     }
 
@@ -228,11 +226,11 @@ class MainActivity : ComponentActivity() {
                 LocationServiceConnection().also { currentConnection = it },
                 Context.BIND_AUTO_CREATE
             )
+            // todo: leak?
         }
     }
 
     private fun stopLocationService() {
-        Log.d("12345", "stopLocationService, currentConnection = $currentConnection")
         currentConnection?.let { connection ->
             unbindService(connection)
             currentConnection = null
