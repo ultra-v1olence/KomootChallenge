@@ -1,4 +1,4 @@
-package com.example.komoot.challenge
+package com.example.komoot.challenge.service
 
 import android.app.*
 import android.content.Context
@@ -11,6 +11,9 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.example.komoot.challenge.MainActivity
+import com.example.komoot.challenge.R
+import com.example.komoot.challenge.repository.PhotosRepository
 import com.google.android.gms.location.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch

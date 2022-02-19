@@ -1,4 +1,4 @@
-package com.example.komoot.challenge
+package com.example.komoot.challenge.repository
 
 import android.location.Location
 import com.example.komoot.challenge.repository.FlickrApiKeys

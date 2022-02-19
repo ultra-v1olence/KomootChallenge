@@ -1,17 +1,20 @@
 package com.example.komoot.challenge
 
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
 
 class MainViewModel : ViewModel() {
 
-    val locationPermissionStateFlow = MutableStateFlow(false)
+    private val _locationPermissionLiveData = MutableLiveData(false)
+    val locationPermissionLiveData: LiveData<Boolean>
+        get() = _locationPermissionLiveData
 
     fun onLocationPermissionGranted() {
-        locationPermissionStateFlow.value = true
+        _locationPermissionLiveData.value = true
     }
 
     fun onLocationPermissionDenied() {
-        locationPermissionStateFlow.value = false
+        _locationPermissionLiveData.value = false
     }
 }
