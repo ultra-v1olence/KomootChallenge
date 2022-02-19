@@ -1,6 +1,7 @@
 package com.example.komoot.challenge
 
 import android.Manifest
+import android.app.ActivityManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -30,15 +31,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.LifecycleCoroutineScope
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.komoot.challenge.ui.theme.AppTheme
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -49,19 +47,24 @@ class MainActivity : ComponentActivity() {
     // todo: а как подсосаться к существующему сервису при старте активности?
 
     private class LocationServiceConnection(
-        private val lifecycleScope: LifecycleCoroutineScope
+        private val lifecycleOwner: LifecycleOwner
     ) : ServiceConnection {
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
             Log.d("12345", "onServiceConnected")
             val binder = service as LocationService.LocationBinder
-            lifecycleScope.launch {
-                binder.locations.collect {
-                    Log.d(
-                        "12345",
-                        "location: ${it.latitude};${it.longitude}"
-                    )
-                }
+            binder.locations.observe(lifecycleOwner) {
+                Log.d(
+                    "12345",
+                    "location: ${it.latitude};${it.longitude}"
+                )
             }
+            binder.numbers.observe(lifecycleOwner) {
+                Log.d(
+                    "12345",
+                    "number: $it"
+                )
+            }
+            // todo: как передавать данные вьюшкам?
         }
 
         override fun onServiceDisconnected(arg0: ComponentName) {
@@ -80,6 +83,15 @@ class MainActivity : ComponentActivity() {
                 }
             }
         checkForFineLocationPermission(activityResultLauncher)
+        val locationServiceRunning = isLocationServiceRunning()
+        Log.d("12345", "activity onCreate, locationServiceRunning = $locationServiceRunning")
+        if (locationServiceRunning) {
+            bindService(
+                Intent(this, LocationService::class.java),
+                LocationServiceConnection(this).also { currentConnection = it },
+                Context.BIND_AUTO_CREATE
+            )
+        }
         setContent {
             AppTheme {
                 val navController = rememberNavController()
@@ -199,7 +211,7 @@ class MainActivity : ComponentActivity() {
             startService(intent)
             bindService(
                 intent,
-                LocationServiceConnection(lifecycleScope).also { currentConnection = it },
+                LocationServiceConnection(this).also { currentConnection = it },
                 Context.BIND_AUTO_CREATE
             )
             // todo: насколько я понимаю, комбинация start+bind всегда прицепится к существующему.
@@ -209,12 +221,25 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun stopLocationService() {
-        Log.d("12345", "stopLocationService")
-        currentConnection?.let { connection -> unbindService(connection) }
+        Log.d("12345", "stopLocationService, currentConnection = $currentConnection")
+        currentConnection?.let { connection ->
+            unbindService(connection)
+            currentConnection = null
+        }
         Intent(this, LocationService::class.java).also { intent ->
             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK
             startService(intent)
         }
+    }
+
+    private fun isLocationServiceRunning(): Boolean {
+        val manager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
+        manager.getRunningServices(Int.MAX_VALUE).forEach {
+            if (LocationService::class.java.name == it.service.className) {
+                return true
+            }
+        }
+        return false
     }
 
     private enum class Screen {

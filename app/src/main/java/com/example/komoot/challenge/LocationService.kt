@@ -6,15 +6,17 @@ import android.content.Intent
 import android.location.Location
 import android.os.Binder
 import android.os.Build
-import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.location.*
 import com.google.android.gms.tasks.Task
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.*
+import java.util.*
+import kotlin.coroutines.CoroutineContext
 
 class LocationService : Service() {
 
@@ -28,7 +30,10 @@ class LocationService : Service() {
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
         }
 
-    private val locationFlow = MutableSharedFlow<Location>()
+    private val locationLiveData = MutableLiveData<Location>()
+    private val numbersLiveData = MutableLiveData<Int>()
+
+    var timer: Timer? = null
 
     override fun onBind(p0: Intent?) = LocationBinder()
 
@@ -60,7 +65,7 @@ class LocationService : Service() {
         //todo: do I even need this task?
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
-                locationFlow.tryEmit(locationResult.lastLocation)
+                locationLiveData.value = locationResult.lastLocation
             }
         }
         try {
@@ -72,10 +77,26 @@ class LocationService : Service() {
         } catch (t: SecurityException) {
             Log.e("12345", "no permission?: $this", t)
         }
+        Timer("increment every second").also { timer = it }.schedule(
+            IncrementTimerTask(
+                numbersLiveData
+            ),
+            0L,
+            1000L,
+        )
+    }
+
+    private class IncrementTimerTask(private val liveData: MutableLiveData<Int>) : TimerTask() {
+        var number = 0
+
+        override fun run() {
+            liveData.postValue(number++)
+        }
     }
 
     override fun onDestroy() {
         Log.d("12345", "LocationService destroyed: $this")
+        timer?.cancel()
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 
@@ -121,9 +142,10 @@ class LocationService : Service() {
     }
 
     inner class LocationBinder : Binder() {
+        val locations: LiveData<Location>
+            get() = locationLiveData
 
-        val locations: Flow<Location>
-            get() = locationFlow
-
+        val numbers: LiveData<Int>
+            get() = numbersLiveData
     }
 }
