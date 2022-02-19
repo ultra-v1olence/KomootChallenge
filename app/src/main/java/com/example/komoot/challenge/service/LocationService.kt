@@ -124,12 +124,11 @@ class LocationService : Service() {
     private fun downloadPhoto(location: Location) {
         coroutineScope.launch {
             try {
-                val photo = photosRepository.retrievePhoto(location)
-                photo?.let {
-                    val photoUrl = "https://live.staticflickr.com/${it.server}/${it.id}_${it.secret}.jpg"
+                val photoUrl = photosRepository.retrievePhotoUrl(location)
+                photoUrl?.let {
                     val existingPhotos = photoUrlsLiveData.value ?: emptyList()
-                    if (!existingPhotos.contains(photoUrl)) {
-                        photoUrlsLiveData.postValue(listOf(photoUrl).plus(existingPhotos))
+                    if (!existingPhotos.contains(it)) {
+                        photoUrlsLiveData.postValue(listOf(it).plus(existingPhotos))
                     }
                 }
             } catch (t: Throwable) {
