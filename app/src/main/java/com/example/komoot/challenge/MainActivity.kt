@@ -30,6 +30,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
@@ -165,7 +166,11 @@ class MainActivity : ComponentActivity() {
                             Image(
                                 painter = rememberImagePainter(it),
                                 contentDescription = null,
-                                modifier = Modifier.size(200.dp) // todo: resize to fit
+                                contentScale = ContentScale.FillWidth,
+                                modifier = Modifier
+                                    .height(250.dp)
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp)
                             )
                         }
                     }
