@@ -47,22 +47,6 @@ class LocationService : Service() {
         super.onCreate()
         Log.d("12345", "LocationService created: $this")
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-        val task: Task<LocationSettingsResponse> =
-            LocationServices
-                .getSettingsClient(this)
-                .checkLocationSettings(
-                    LocationSettingsRequest
-                        .Builder()
-                        .addLocationRequest(locationRequest)
-                        .build()
-                )
-        task.addOnSuccessListener { locationSettingsResponse ->
-            Log.d(
-                "12345",
-                "isLocationUsable = ${locationSettingsResponse.locationSettingsStates?.isLocationUsable}: $this"
-            )
-        }
-        //todo: do I even need this task?
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 locationLiveData.value = locationResult.lastLocation

@@ -43,8 +43,6 @@ class MainActivity : ComponentActivity() {
     private val mainViewModel: MainViewModel by viewModels()
 
     private var currentConnection: LocationServiceConnection? = null
-    // todo: то есть при перевороте девайса соединение ломается? (да; и сервис умирает) поможет ли rememberSaveable?
-    // todo: а как подсосаться к существующему сервису при старте активности?
 
     private class LocationServiceConnection(
         private val lifecycleOwner: LifecycleOwner
@@ -214,9 +212,6 @@ class MainActivity : ComponentActivity() {
                 LocationServiceConnection(this).also { currentConnection = it },
                 Context.BIND_AUTO_CREATE
             )
-            // todo: насколько я понимаю, комбинация start+bind всегда прицепится к существующему.
-            // и ее можно вызывать, даже если сервис уже существует: start ничего не сделает (хорошо бы проверить, вызвав start дважды подряд)
-            // todo: вообще, если я вызываю bind, то start уже не нужен даже, правильно?
         }
     }
 
