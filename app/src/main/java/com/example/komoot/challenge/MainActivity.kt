@@ -33,7 +33,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -48,31 +47,21 @@ class MainActivity : ComponentActivity() {
 
     private var currentConnection: LocationServiceConnection? = null
 
-    private class LocationServiceConnection(
-        private val lifecycleOwner: LifecycleOwner
-    ) : ServiceConnection {
+    private class LocationServiceConnection : ServiceConnection {
         var photos: LiveData<List<String>>? = null
 
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
-            Log.d("12345", "onServiceConnected")
             val binder = service as LocationService.LocationBinder
-            binder.locations.observe(lifecycleOwner) {
-                Log.d(
-                    "12345",
-                    "location: ${it.latitude};${it.longitude}"
-                )
-            }
             photos = binder.photoUrls
         }
 
         override fun onServiceDisconnected(arg0: ComponentName) {
-            Log.d("12345", "onServiceDisconnected")
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val activityResultLauncher: ActivityResultLauncher<String> =
+        checkForFineLocationPermission(
             registerForActivityResult(ActivityResultContracts.RequestPermission()) {
                 if (it) {
                     onLocationPermissionGranted()
@@ -80,13 +69,12 @@ class MainActivity : ComponentActivity() {
                     onLocationPermissionDenied()
                 }
             }
-        checkForFineLocationPermission(activityResultLauncher)
+        )
         val locationServiceRunning = isLocationServiceRunning()
-        Log.d("12345", "activity onCreate, locationServiceRunning = $locationServiceRunning")
         if (locationServiceRunning) {
             bindService(
                 Intent(this, LocationService::class.java),
-                LocationServiceConnection(this).also { currentConnection = it },
+                LocationServiceConnection().also { currentConnection = it },
                 Context.BIND_AUTO_CREATE
             )
         }
@@ -237,7 +225,7 @@ class MainActivity : ComponentActivity() {
             startService(intent)
             bindService(
                 intent,
-                LocationServiceConnection(this).also { currentConnection = it },
+                LocationServiceConnection().also { currentConnection = it },
                 Context.BIND_AUTO_CREATE
             )
         }
