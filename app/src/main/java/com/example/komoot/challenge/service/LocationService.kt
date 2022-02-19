@@ -7,6 +7,7 @@ import android.location.Location
 import android.os.Binder
 import android.os.Build
 import android.os.Looper
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LiveData
@@ -15,12 +16,14 @@ import com.example.komoot.challenge.MainActivity
 import com.example.komoot.challenge.R
 import com.example.komoot.challenge.repository.PhotosRepository
 import com.google.android.gms.location.*
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import java.util.concurrent.TimeUnit
 
 class LocationService : Service() {
+
     class LocationBinder(val photoUrls: LiveData<List<String>>) : Binder()
+
+    private val coroutineScope = CoroutineScope(Dispatchers.IO + Job())
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
@@ -75,11 +78,13 @@ class LocationService : Service() {
                 locationCallback,
                 Looper.getMainLooper()
             )
-        } catch (t: SecurityException) {
+        } catch (securityException: SecurityException) {
+            Log.e("LocationService","Can't request location updates", securityException)
         }
     }
 
     override fun onDestroy() {
+        coroutineScope.cancel()
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 
@@ -117,7 +122,7 @@ class LocationService : Service() {
 
 
     private fun downloadPhoto(location: Location) {
-        GlobalScope.launch { // fixme: of course it should be something else
+        coroutineScope.launch {
             try {
                 val photo = photosRepository.retrievePhoto(location)
                 photo?.let {
@@ -128,7 +133,7 @@ class LocationService : Service() {
                     }
                 }
             } catch (t: Throwable) {
-
+                Log.e("LocationService","Can't download photo", t)
             }
         }
     }
