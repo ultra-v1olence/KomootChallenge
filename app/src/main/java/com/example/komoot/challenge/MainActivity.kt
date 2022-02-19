@@ -15,9 +15,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.Scaffold
@@ -27,11 +25,13 @@ import androidx.compose.material.icons.filled.Hiking
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LiveData
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -47,6 +47,8 @@ class MainActivity : ComponentActivity() {
     private class LocationServiceConnection(
         private val lifecycleOwner: LifecycleOwner
     ) : ServiceConnection {
+        var numbers: LiveData<Int>? = null
+
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
             Log.d("12345", "onServiceConnected")
             val binder = service as LocationService.LocationBinder
@@ -56,13 +58,7 @@ class MainActivity : ComponentActivity() {
                     "location: ${it.latitude};${it.longitude}"
                 )
             }
-            binder.numbers.observe(lifecycleOwner) {
-                Log.d(
-                    "12345",
-                    "number: $it"
-                )
-            }
-            // todo: как передавать данные вьюшкам?
+            numbers = binder.numbers
         }
 
         override fun onServiceDisconnected(arg0: ComponentName) {
@@ -142,6 +138,7 @@ class MainActivity : ComponentActivity() {
     private fun Walk(
         onWalkEnded: () -> Unit,
     ) {
+        val number = currentConnection?.numbers?.observeAsState()
         Scaffold(
             floatingActionButton = {
                 FloatingActionButton(
@@ -158,10 +155,17 @@ class MainActivity : ComponentActivity() {
             }
         ) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(
-                    text = getString(R.string.stop_walk),
-                    modifier = Modifier.padding(horizontal = 48.dp)
-                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = getString(R.string.stop_walk),
+                        modifier = Modifier.padding(horizontal = 48.dp)
+                    )
+                    if (number?.value != null) {
+                        Text(
+                            text = number.value.toString(),
+                        )
+                    }
+                }
             }
         }
     }
