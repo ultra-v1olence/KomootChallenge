@@ -34,8 +34,7 @@ class LocationService : Service() {
 
     override fun onUnbind(intent: Intent?): Boolean {
         Log.d("12345", "LocationService onUnbind: $this")
-        stopSelf()
-        // todo: it's not necessary to call stopSelf here; I can destroy the service from onStartCommand if I send a specific parameter. this service can proceed while unbound
+        //этот метод почему-то сам вызывается при смерти активности.
         return super.onUnbind(intent)
     }
 
@@ -82,6 +81,10 @@ class LocationService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d("12345", "LocationService onStartCommand: $this")
+        if (intent?.flags?.equals(Intent.FLAG_ACTIVITY_CLEAR_TASK) == true) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
         val pendingIntent: PendingIntent =
             Intent(this, MainActivity::class.java).let { notificationIntent ->
                 PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE) // todo: what does this flag mean?

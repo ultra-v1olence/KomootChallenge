@@ -209,7 +209,12 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun stopLocationService() {
+        Log.d("12345", "stopLocationService")
         currentConnection?.let { connection -> unbindService(connection) }
+        Intent(this, LocationService::class.java).also { intent ->
+            intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startService(intent)
+        }
     }
 
     private enum class Screen {
