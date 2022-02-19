@@ -14,12 +14,10 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.example.komoot.challenge.MainActivity
 import com.example.komoot.challenge.R
-import com.example.komoot.challenge.repository.FlickrApiKeys
 import com.example.komoot.challenge.repository.PhotosRepository
-import com.flickr4java.flickr.Flickr
-import com.flickr4java.flickr.REST
 import com.google.android.gms.location.*
 import kotlinx.coroutines.*
+import org.koin.android.ext.android.inject
 import java.util.concurrent.TimeUnit
 
 class LocationService : Service() {
@@ -27,6 +25,8 @@ class LocationService : Service() {
     class LocationBinder(val photoUrls: LiveData<List<String>>) : Binder()
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO + Job())
+
+    private val photosRepository: PhotosRepository by inject()
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
@@ -38,12 +38,6 @@ class LocationService : Service() {
         }
 
     private val photoUrlsLiveData = MutableLiveData<List<String>>()
-
-    private val photosRepository = PhotosRepository(
-        // actual API keys are not committed to the repository
-        Flickr(FlickrApiKeys.API_KEY, FlickrApiKeys.SECRET, REST())
-    // todo: replace with koin
-    )
 
     private val notificationChannelId
         get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

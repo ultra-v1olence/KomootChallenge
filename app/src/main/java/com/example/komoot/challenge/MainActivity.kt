@@ -14,7 +14,6 @@ import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LiveData
 import androidx.navigation.compose.rememberNavController
@@ -22,10 +21,11 @@ import com.example.komoot.challenge.service.LocationService
 import com.example.komoot.challenge.ui.AppNavGraph
 import com.example.komoot.challenge.ui.Screen
 import com.example.komoot.challenge.ui.theme.AppTheme
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity : ComponentActivity() {
 
-    private val mainViewModel: MainViewModel by viewModels()
+    private val mainViewModel: MainViewModel by viewModel()
 
     private var currentConnection: LocationServiceConnection? = null
 
