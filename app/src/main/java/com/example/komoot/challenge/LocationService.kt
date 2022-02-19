@@ -13,7 +13,10 @@ import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.location.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 class LocationService : Service() {
 
@@ -22,13 +25,14 @@ class LocationService : Service() {
 
     private val locationRequest
         get() = LocationRequest.create().apply {
-            interval = 10000
-            fastestInterval = 5000
+            interval = TimeUnit.SECONDS.toMillis(10) // todo: the real number will be about 60
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
         }
 
     private val locationLiveData = MutableLiveData<Location>()
     private val numbersLiveData = MutableLiveData<Int>()
+
+    private val photosRepository = PhotosRepository()
 
     private var timer: Timer? = null
 
@@ -46,7 +50,20 @@ class LocationService : Service() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
-                locationLiveData.value = locationResult.lastLocation
+                val lastLocation = locationResult.lastLocation
+                locationLiveData.value = lastLocation
+                GlobalScope.launch { // fixme: of course it should be something else
+                    try {
+                        photosRepository.retrievePhoto(
+                            lastLocation.latitude.toString(),
+                            lastLocation.longitude.toString(),
+                        ).also {
+                            Log.d("12345", "Photo retrieved: $it")
+                        }
+                    } catch (t: Throwable) {
+                        Log.e("12345", "Photo retrieval error", t)
+                    }
+                }
             }
         }
         try {
