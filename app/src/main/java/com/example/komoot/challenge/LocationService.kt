@@ -56,9 +56,10 @@ class LocationService : Service() {
                         photo?.let {
                             val photoUrl = "https://live.staticflickr.com/${it.server}/${it.id}_${it.secret}.jpg"
                             Log.d("12345", "Photo retrieved: $photoUrl")
-                            photoUrlsLiveData.postValue(
-                                listOf(photoUrl).plus(photoUrlsLiveData.value ?: emptyList())
-                            )
+                            val existingPhotos = photoUrlsLiveData.value ?: emptyList()
+                            if (!existingPhotos.contains(photoUrl)) {
+                                photoUrlsLiveData.postValue(listOf(photoUrl).plus(existingPhotos))
+                            }
                         }
                     } catch (t: Throwable) {
                         Log.e("12345", "Photo retrieval error", t)
