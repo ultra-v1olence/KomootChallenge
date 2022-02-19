@@ -44,7 +44,7 @@ class PhotosRepositoryTest {
     }
 
     @Test
-    fun `method twice called from the same location, second call returns null`() {
+    fun `method called twice from the same location, second call returns null`() {
         val location = mockk<Location> {
             every { latitude } returns 10.0
             every { longitude } returns 10.0
@@ -59,7 +59,7 @@ class PhotosRepositoryTest {
     }
 
     @Test
-    fun `method twice called from distinct locations which are far away, second url is not null`() {
+    fun `method called twice from distinct locations which are far from each other, second url is not null`() {
         val location = mockk<Location> {
             every { latitude } returns 10.0
             every { longitude } returns 10.0
