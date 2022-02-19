@@ -96,7 +96,10 @@ class LocationService : Service() {
             }
 
         val channelId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            createNotificationChannel(getString(R.string.app_name), "Location updates")
+            createNotificationChannel(
+                getString(R.string.app_name),
+                getString(R.string.app_notification_channel_title),
+            )
         } else {
             getString(R.string.app_name)
         }

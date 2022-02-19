@@ -93,7 +93,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             AppTheme {
                 val navController = rememberNavController()
-                AppNavGraph(navController)
+                AppNavGraph(navController, locationServiceRunning)
             }
         }
     }
@@ -169,8 +169,16 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun AppNavGraph(
         navHostController: NavHostController,
+        locationServiceRunning: Boolean,
     ) {
-        NavHost(navController = navHostController, startDestination = Screen.START_WALK.name) {
+        NavHost(
+            navController = navHostController,
+            startDestination = if (locationServiceRunning) {
+                Screen.WALK.name
+            } else {
+                Screen.START_WALK.name
+            },
+        ) {
             composable(route = Screen.START_WALK.name) {
                 StartNewWalk {
                     navHostController.navigate(Screen.WALK.name)
@@ -241,5 +249,5 @@ class MainActivity : ComponentActivity() {
         START_WALK,
         WALK,
     }
-    // todo: this navigation is useless
+    // todo: move everything related to the Compose to a separate file
 }

@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">Vladimir Sechkarev - Challenge</string>
+    <string name="app_notification_channel_title">Location updates</string>
     <string name="please_allow_location">Please allow us to access current location data. The app is useless without this permission.</string>
     <string name="start_new_walk">Press the button to start a new walk.</string>
     <string name="stop_walk">Press the button to stop the walk.</string>
