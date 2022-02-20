@@ -15,12 +15,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.LiveData
 import androidx.navigation.compose.rememberNavController
 import com.example.komoot.challenge.service.LocationService
 import com.example.komoot.challenge.ui.AppNavGraph
 import com.example.komoot.challenge.ui.Screen
 import com.example.komoot.challenge.ui.theme.AppTheme
-import kotlinx.coroutines.flow.Flow
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity : ComponentActivity() {
@@ -30,7 +30,7 @@ class MainActivity : ComponentActivity() {
     private var currentConnection: LocationServiceConnection? = null
 
     private class LocationServiceConnection : ServiceConnection {
-        var photoUrls: Flow<List<String>>? = null
+        var photoUrls: LiveData<List<String>>? = null
 
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
             val binder = service as LocationService.LocationBinder
@@ -62,7 +62,7 @@ class MainActivity : ComponentActivity() {
                         navController.navigate(Screen.START_WALK.name)
                     },
                     onOpenPermissionSettingsClick = { openPermissionsSettings() },
-                    getPhotoUrlsFlow = { currentConnection?.photoUrls },
+                    getPhotoUrlsLiveData = { currentConnection?.photoUrls },
                     locationPermissionLiveData = mainViewModel.locationPermissionLiveData,
                 )
             }

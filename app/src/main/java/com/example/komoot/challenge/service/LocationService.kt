@@ -13,18 +13,19 @@ import android.os.Looper
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.asLiveData
 import com.example.komoot.challenge.MainActivity
 import com.example.komoot.challenge.R
 import com.example.komoot.challenge.repository.PhotosRepository
 import com.google.android.gms.location.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.Flow
 import org.koin.android.ext.android.inject
 import java.util.concurrent.TimeUnit
 
 class LocationService : Service() {
 
-    class LocationBinder(val photoUrls: Flow<List<String>>) : Binder()
+    class LocationBinder(val photoUrls: LiveData<List<String>>) : Binder()
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO + Job())
 
@@ -63,7 +64,7 @@ class LocationService : Service() {
             )
         }
 
-    override fun onBind(p0: Intent?) = LocationBinder(photosRepository.photoUrlsFlow)
+    override fun onBind(p0: Intent?) = LocationBinder(photosRepository.photoUrlsFlow.asLiveData())
 
     override fun onCreate() {
         super.onCreate()

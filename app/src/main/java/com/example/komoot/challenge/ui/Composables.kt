@@ -34,7 +34,7 @@ fun AppNavGraph(
     onNewWalkStarted: () -> Unit,
     onWalkEnded: () -> Unit,
     onOpenPermissionSettingsClick: () -> Unit,
-    getPhotoUrlsFlow: () -> Flow<List<String>>?,
+    getPhotoUrlsLiveData: () -> LiveData<List<String>>?,
     locationPermissionLiveData: LiveData<Boolean>,
 ) {
     NavHost(
@@ -55,7 +55,7 @@ fun AppNavGraph(
         composable(route = Screen.WALK.name) {
             CurrentWalk(
                 onWalkEnded,
-                getPhotoUrlsFlow()
+                getPhotoUrlsLiveData()
             )
         }
     }
@@ -107,9 +107,9 @@ private fun StartNewWalk(
 @Composable
 private fun CurrentWalk(
     onWalkEnded: () -> Unit,
-    photoUrlsFlow: Flow<List<String>>?,
+    photoUrlsFlow: LiveData<List<String>>?,
 ) {
-    val photos = photoUrlsFlow?.collectAsState(emptyList())?.value ?: emptyList()
+    val photos = photoUrlsFlow?.observeAsState()?.value ?: emptyList()
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
