@@ -1,16 +1,19 @@
 package com.example.komoot.challenge.repository
 
 import android.location.Location
+import app.cash.turbine.test
 import com.flickr4java.flickr.Flickr
 import com.flickr4java.flickr.photos.Photo
 import com.flickr4java.flickr.photos.PhotoList
-import com.flickr4java.flickr.photos.SearchParameters
 import io.mockk.every
 import io.mockk.mockk
-import org.junit.Assert.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 
+@ExperimentalCoroutinesApi
 class PhotosRepositoryTest {
 
     private val flickr = mockk<Flickr>()
@@ -32,45 +35,60 @@ class PhotosRepositoryTest {
     }
 
     @Test
-    fun `flickr interface returns a photo, url matches photo parameters`() {
+    fun `flickr interface triggers flow, url matches photo parameters`() {
         val location = mockk<Location> {
             every { latitude } returns 10.0
             every { longitude } returns 10.0
         }
 
-        val url = repository.retrievePhotoUrl(location)
-
-        assertEquals("https://live.staticflickr.com/12345/976543_abcdefg.jpg", url)
+        runTest {
+            repository.photoUrlsFlow.test {
+                repository.retrieveNewPhoto(location)
+                val urlList = awaitItem()
+                assertEquals(1, urlList.size)
+                assertEquals("https://live.staticflickr.com/12345/976543_abcdefg.jpg", urlList[0])
+                cancelAndConsumeRemainingEvents()
+            }
+        }
     }
 
     @Test
-    fun `method called twice from the same location, second call returns null`() {
+    fun `method called twice from the same location, second call does not trigger flow`() {
         val location = mockk<Location> {
             every { latitude } returns 10.0
             every { longitude } returns 10.0
             every { distanceTo(any()) } returns 0f
         }
 
-        val url1 = repository.retrievePhotoUrl(location)
-        val url2 = repository.retrievePhotoUrl(location)
-
-        assertNotNull(url1)
-        assertNull(url2)
+        runTest {
+            repository.photoUrlsFlow.test {
+                repository.retrieveNewPhoto(location)
+                val urlList = awaitItem()
+                repository.retrieveNewPhoto(location)
+                expectNoEvents()
+                assertEquals(1, urlList.size)
+            }
+        }
     }
 
     @Test
-    fun `method called twice from distinct locations which are far from each other, second url is not null`() {
+    fun `method called twice from distinct locations which are far from each other, flow is triggered twice`() {
         val location = mockk<Location> {
             every { latitude } returns 10.0
             every { longitude } returns 10.0
             every { distanceTo(any()) } returns 1000f
         }
 
-        val url1 = repository.retrievePhotoUrl(location)
-        val url2 = repository.retrievePhotoUrl(location)
-
-        assertNotNull(url1)
-        assertNotNull(url2)
-        assertEquals(url1, url2)
+        runTest {
+            repository.photoUrlsFlow.test {
+                repository.retrieveNewPhoto(location)
+                val urlList1 = awaitItem()
+                repository.retrieveNewPhoto(location)
+                val urlList2 = awaitItem()
+                assertEquals(1, urlList1.size)
+                assertEquals(1, urlList2.size)
+                assertEquals(urlList1[0], urlList2[0])
+            }
+        }
     }
 }
