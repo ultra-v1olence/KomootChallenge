@@ -17,22 +17,23 @@ class PhotosRepository(private val flickr: Flickr) {
             lastLocationWithPhoto?.let { it.distanceTo(location) >= 100 } ?: true
         if (!newLocationIsFarEnoughFromPrevious) return
 
-        val photo = flickr.photosInterface.search(
+        val photosOfGivenLocation = flickr.photosInterface.search(
             SearchParameters().apply {
                 this.latitude = location.latitude.toString()
                 this.longitude = location.longitude.toString()
             },
-            1,
+            0,
             0
-        ).firstOrNull() ?: return
+        )
 
-        lastLocationWithPhoto = location
-        val photoUrl = photo.let {
-            "https://live.staticflickr.com/${it.server}/${it.id}_${it.secret}.jpg"
-        }
-        if (!photoUrls.contains(photoUrl)) {
-            photoUrls.add(0, photoUrl)
-        }
+        photosOfGivenLocation
+            .map { "https://live.staticflickr.com/${it.server}/${it.id}_${it.secret}.jpg" }
+            .firstOrNull { !photoUrls.contains(it) }
+            ?.let {
+                photoUrls.add(0, it)
+                lastLocationWithPhoto = location
+            }
+
         photoUrlsFlow.emit(ArrayList(photoUrls))
     }
 }
