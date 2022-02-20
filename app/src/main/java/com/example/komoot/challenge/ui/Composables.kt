@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Hiking
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,6 +25,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import coil.compose.rememberImagePainter
 import com.example.komoot.challenge.R
+import kotlinx.coroutines.flow.Flow
 
 @Composable
 fun AppNavGraph(
@@ -32,7 +34,7 @@ fun AppNavGraph(
     onNewWalkStarted: () -> Unit,
     onWalkEnded: () -> Unit,
     onOpenPermissionSettingsClick: () -> Unit,
-    getPhotoUrlsLiveData: () -> LiveData<List<String>>?,
+    getPhotoUrlsFlow: () -> Flow<List<String>>?,
     locationPermissionLiveData: LiveData<Boolean>,
 ) {
     NavHost(
@@ -53,7 +55,7 @@ fun AppNavGraph(
         composable(route = Screen.WALK.name) {
             CurrentWalk(
                 onWalkEnded,
-                getPhotoUrlsLiveData()
+                getPhotoUrlsFlow()
             )
         }
     }
@@ -105,9 +107,9 @@ private fun StartNewWalk(
 @Composable
 private fun CurrentWalk(
     onWalkEnded: () -> Unit,
-    photoUrlsLiveData: LiveData<List<String>>?,
+    photoUrlsFlow: Flow<List<String>>?,
 ) {
-    val photos = photoUrlsLiveData?.observeAsState()
+    val photos = photoUrlsFlow?.collectAsState(emptyList())?.value ?: emptyList()
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
@@ -123,10 +125,9 @@ private fun CurrentWalk(
             )
         }
     ) {
-        val photosList = photos?.value ?: emptyList()
-        if (photosList.isNotEmpty()) {
+        if (photos.isNotEmpty()) {
             LazyColumn {
-                photosList.forEach {
+                photos.forEach {
                     item {
                         Image(
                             painter = rememberImagePainter(it),

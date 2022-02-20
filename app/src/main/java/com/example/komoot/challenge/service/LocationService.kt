@@ -1,6 +1,9 @@
 package com.example.komoot.challenge.service
 
-import android.app.*
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.location.Location
@@ -10,19 +13,18 @@ import android.os.Looper
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import com.example.komoot.challenge.MainActivity
 import com.example.komoot.challenge.R
 import com.example.komoot.challenge.repository.PhotosRepository
 import com.google.android.gms.location.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.Flow
 import org.koin.android.ext.android.inject
 import java.util.concurrent.TimeUnit
 
 class LocationService : Service() {
 
-    class LocationBinder(val photoUrls: LiveData<List<String>>) : Binder()
+    class LocationBinder(val photoUrls: Flow<List<String>>) : Binder()
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO + Job())
 
@@ -36,8 +38,6 @@ class LocationService : Service() {
             interval = TimeUnit.SECONDS.toMillis(10)
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
         }
-
-    private val photoUrlsLiveData = MutableLiveData<List<String>>()
 
     private val notificationChannelId
         get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -63,7 +63,7 @@ class LocationService : Service() {
             )
         }
 
-    override fun onBind(p0: Intent?) = LocationBinder(photoUrlsLiveData)
+    override fun onBind(p0: Intent?) = LocationBinder(photosRepository.photoUrlsFlow)
 
     override fun onCreate() {
         super.onCreate()
@@ -125,13 +125,7 @@ class LocationService : Service() {
     private fun downloadPhoto(location: Location) {
         coroutineScope.launch {
             try {
-                val photoUrl = photosRepository.retrievePhotoUrl(location)
-                photoUrl?.let {
-                    val existingPhotos = photoUrlsLiveData.value ?: emptyList()
-                    if (!existingPhotos.contains(it)) {
-                        photoUrlsLiveData.postValue(listOf(it).plus(existingPhotos))
-                    }
-                }
+                photosRepository.retrieveNewPhoto(location)
             } catch (t: Throwable) {
                 Log.e("LocationService","Can't download photo", t)
             }

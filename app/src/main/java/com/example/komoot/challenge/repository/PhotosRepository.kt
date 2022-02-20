@@ -3,15 +3,19 @@ package com.example.komoot.challenge.repository
 import android.location.Location
 import com.flickr4java.flickr.Flickr
 import com.flickr4java.flickr.photos.SearchParameters
+import kotlinx.coroutines.flow.MutableSharedFlow
 
 class PhotosRepository(private val flickr: Flickr) {
 
-    private var lastLocationWithPhoto: Location? = null
+    val photoUrlsFlow = MutableSharedFlow<List<String>>()
 
-    fun retrievePhotoUrl(location: Location): String? {
+    private var lastLocationWithPhoto: Location? = null
+    private val photoUrls = mutableListOf<String>()
+
+    suspend fun retrieveNewPhoto(location: Location) {
         val newLocationIsFarEnoughFromPrevious =
             lastLocationWithPhoto?.let { it.distanceTo(location) >= 100 } ?: true
-        if (!newLocationIsFarEnoughFromPrevious) return null
+        if (!newLocationIsFarEnoughFromPrevious) return
 
         val photo = flickr.photosInterface.search(
             SearchParameters().apply {
@@ -20,11 +24,15 @@ class PhotosRepository(private val flickr: Flickr) {
             },
             1,
             0
-        ).firstOrNull() ?: return null
+        ).firstOrNull() ?: return
 
         lastLocationWithPhoto = location
-        return photo.let {
+        val photoUrl = photo.let {
             "https://live.staticflickr.com/${it.server}/${it.id}_${it.secret}.jpg"
         }
+        if (!photoUrls.contains(photoUrl)) {
+            photoUrls.add(0, photoUrl)
+        }
+        photoUrlsFlow.emit(ArrayList(photoUrls))
     }
 }
