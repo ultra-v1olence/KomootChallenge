@@ -132,7 +132,7 @@ private fun CurrentWalk(
                         Image(
                             painter = rememberImagePainter(it),
                             contentDescription = null,
-                            contentScale = ContentScale.FillWidth,
+                            contentScale = ContentScale.FillHeight,
                             modifier = Modifier
                                 .height(250.dp)
                                 .fillMaxWidth()
