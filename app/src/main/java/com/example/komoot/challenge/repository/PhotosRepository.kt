@@ -25,7 +25,7 @@ class PhotosRepository(private val flickr: Flickr) {
                 this.latitude = location.latitude.toString()
                 this.longitude = location.longitude.toString()
                 this.hasGeo = true
-                this.radius = 0.1 //what is should be?..
+                this.radius = 0.1
                 this.extras = setOf("geo")
             },
             0,
