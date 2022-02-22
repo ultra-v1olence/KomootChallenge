@@ -2,6 +2,7 @@ package com.example.komoot.challenge.repository
 
 import android.location.Location
 import app.cash.turbine.test
+import com.example.komoot.challenge.ext.flickrUrl
 import com.flickr4java.flickr.Flickr
 import com.flickr4java.flickr.photos.GeoData
 import com.flickr4java.flickr.photos.Photo
@@ -24,19 +25,10 @@ class PhotosRepositoryTest {
     @Before
     fun setUp() {
         repository = PhotosRepository(flickr)
-        val photo = Photo().apply {
-            server = "12345"
-            id = "976543"
-            secret = "abcdefg"
-            geoData = GeoData().apply {
-                latitude = 50f
-                longitude = 8f
-            }
-        }
         every {
             flickr.photosInterface.search(any(), any(), any())
         } returns PhotoList<Photo>().apply {
-            add(photo)
+            add(photo1)
         }
     }
 
@@ -141,6 +133,57 @@ class PhotosRepositoryTest {
                 assertEquals(2, urlList2.size)
                 assertNotEquals(urlList1[0], urlList2[0])
                 assertEquals(urlList1[0], urlList2[1])
+            }
+        }
+    }
+
+    @Test
+    fun `flickr interface returns two images, the closest one is in the list, the second one is added to the list on the 2nd call`() {
+
+        every {
+            flickr.photosInterface.search(any(), any(), any())
+        } returns PhotoList<Photo>().apply {
+            add(photo1)
+            add(photo2)
+        }
+        val location = mockk<Location> {
+            every { latitude } returns 50.1
+            every { longitude } returns 8.1
+            every { distanceTo(any()) } returns 1000f
+        }
+
+        runTest {
+            repository.photoUrlsFlow.test {
+                repository.retrieveNewPhoto(location)
+                val urlList1 = awaitItem()
+                repository.retrieveNewPhoto(location)
+                val urlList2 = awaitItem()
+                assertEquals(1, urlList1.size)
+                assertEquals(2, urlList2.size)
+                assertEquals(photo2.flickrUrl, urlList1[0])
+                assertEquals(photo1.flickrUrl, urlList2[0])
+                assertEquals(photo2.flickrUrl, urlList2[1])
+            }
+        }
+    }
+
+    private companion object {
+        val photo1 = Photo().apply {
+            server = "12345"
+            id = "976543"
+            secret = "abcdefg"
+            geoData = GeoData().apply {
+                latitude = 50f
+                longitude = 8f
+            }
+        }
+        val photo2 = Photo().apply {
+            server = "67890"
+            id = "324654"
+            secret = "zxcvbn"
+            geoData = GeoData().apply {
+                latitude = 50.1f
+                longitude = 8.1f
             }
         }
     }

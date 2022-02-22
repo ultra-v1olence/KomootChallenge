@@ -1,12 +1,11 @@
 package com.example.komoot.challenge.repository
 
 import android.location.Location
-import android.util.Log
+import com.example.komoot.challenge.ext.distanceToLocation
+import com.example.komoot.challenge.ext.flickrUrl
 import com.flickr4java.flickr.Flickr
-import com.flickr4java.flickr.photos.Photo
 import com.flickr4java.flickr.photos.SearchParameters
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlin.math.pow
 
 class PhotosRepository(private val flickr: Flickr) {
 
@@ -44,12 +43,4 @@ class PhotosRepository(private val flickr: Flickr) {
 
         photoUrlsFlow.emit(ArrayList(photoUrls))
     }
-
-    private fun Photo.distanceToLocation(latitude: Double, longitude: Double): Double? =
-        geoData?.let {
-            (it.latitude - latitude).pow(2) + (it.longitude - longitude).pow(2)
-        }?.pow(0.5)
-
-    private val Photo.flickrUrl
-        get() = "https://live.staticflickr.com/${server}/${id}_${secret}.jpg"
 }
