@@ -3,6 +3,7 @@ package com.example.komoot.challenge.repository
 import android.location.Location
 import app.cash.turbine.test
 import com.flickr4java.flickr.Flickr
+import com.flickr4java.flickr.photos.GeoData
 import com.flickr4java.flickr.photos.Photo
 import com.flickr4java.flickr.photos.PhotoList
 import io.mockk.every
@@ -27,6 +28,10 @@ class PhotosRepositoryTest {
             server = "12345"
             id = "976543"
             secret = "abcdefg"
+            geoData = GeoData().apply {
+                latitude = 50f
+                longitude = 8f
+            }
         }
         every {
             flickr.photosInterface.search(any(), any(), any())
@@ -99,11 +104,19 @@ class PhotosRepositoryTest {
             server = "12345"
             id = "976543"
             secret = "abcdefg"
+            geoData = GeoData().apply {
+                latitude = 50f
+                longitude = 8f
+            }
         }
         val photo2 = Photo().apply {
             server = "67890"
             id = "324654"
             secret = "zxcvbn"
+            geoData = GeoData().apply {
+                latitude = 50.1f
+                longitude = 8.1f
+            }
         }
         every {
             flickr.photosInterface.search(any(), any(), any())
